@@ -1,18 +1,49 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <board
+      v-bind:message="message"
+    ></board>
+    <metamask></metamask>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import Board from './components/Board.vue'
+import MetaMask from './components/MetaMask.vue';
+
+import Web3 from 'web3';
+import storageABI from './contracts/Storage.json'
 
 export default {
   name: 'app',
   components: {
-    HelloWorld
-  }
+    'board': Board,
+    'metamask': MetaMask,
+  },
+  data() {
+    return {
+      message: '',
+      web3: null,
+      filter: null
+    }
+  },
+  created () {
+    // web3 version 0.20.3, https://github.com/ethereum/wiki/wiki/JavaScript-API
+    this.web3 = new Web3(new Web3.providers.WebsocketProvider('ws://localhost:8546'));
+    
+    var storageContract = web3.eth.contract(storageABI);
+    var storageContractInstance = storageContract.at('0xd91fb8750ea1decef4cee9d8314f4a60de039457');
+    var event = storageContractInstance.Created({}, [])
+    
+    const self = this;
+    event.watch((error, result) => {
+      if (!error) console.log(result.args.value);
+      self.message = result;
+    });
+  },
+  beforeDestroy () {
+    event.stopWatching();
+  },
 }
 </script>
 
